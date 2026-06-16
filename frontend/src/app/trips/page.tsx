@@ -12,10 +12,13 @@ type Trip = {
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
+
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const [editingTripId, setEditingTripId] = useState<number | null>(null);
 
   const fetchTrips = async () => {
     const response = await fetch("http://localhost:8080/api/trips");
@@ -24,35 +27,67 @@ export default function TripsPage() {
   };
 
   useEffect(() => {
-  const loadTrips = async () => {
-    const response = await fetch("http://localhost:8080/api/trips");
-    const data = await response.json();
-    setTrips(data);
-  };
+    const loadTrips = async () => {
+      const response = await fetch("http://localhost:8080/api/trips");
+      const data = await response.json();
+      setTrips(data);
+    };
 
-  loadTrips();
-}, []);
+    loadTrips();
+  }, []);
 
-  const handleCreateTrip = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    await fetch("http://localhost:8080/api/trips", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        destination,
-        startDate,
-        endDate,
-      }),
-    });
-
+  const clearForm = () => {
     setTitle("");
     setDestination("");
     setStartDate("");
     setEndDate("");
+    setEditingTripId(null);
+  };
+
+  const handleSubmitTrip = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const tripData = {
+      title,
+      destination,
+      startDate,
+      endDate,
+    };
+
+    if (editingTripId) {
+      await fetch(`http://localhost:8080/api/trips/${editingTripId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(tripData),
+      });
+    } else {
+      await fetch("http://localhost:8080/api/trips", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(tripData),
+      });
+    }
+
+    clearForm();
+    fetchTrips();
+  };
+
+  const handleEditTrip = (trip: Trip) => {
+    setEditingTripId(trip.id);
+    setTitle(trip.title);
+    setDestination(trip.destination);
+    setStartDate(trip.startDate);
+    setEndDate(trip.endDate);
+  };
+
+  const handleDeleteTrip = async (id: number) => {
+    await fetch(`http://localhost:8080/api/trips/${id}`, {
+      method: "DELETE",
+    });
 
     fetchTrips();
   };
@@ -62,10 +97,12 @@ export default function TripsPage() {
       <h1 className="mb-6 text-4xl font-bold">Jourvia Trips</h1>
 
       <form
-        onSubmit={handleCreateTrip}
+        onSubmit={handleSubmitTrip}
         className="mb-10 flex max-w-xl flex-col gap-4 rounded-xl border p-6"
       >
-        <h2 className="text-2xl font-semibold">Create a Trip</h2>
+        <h2 className="text-2xl font-semibold">
+          {editingTripId ? "Edit Trip" : "Create a Trip"}
+        </h2>
 
         <input
           className="rounded border px-3 py-2"
@@ -95,12 +132,24 @@ export default function TripsPage() {
           onChange={(e) => setEndDate(e.target.value)}
         />
 
-        <button
-          type="submit"
-          className="rounded bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-600"
-        >
-          Add Trip
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            className="rounded bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-600"
+          >
+            {editingTripId ? "Save Changes" : "Add Trip"}
+          </button>
+
+          {editingTripId && (
+            <button
+              type="button"
+              onClick={clearForm}
+              className="rounded border px-4 py-2 font-semibold hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       <section>
@@ -114,6 +163,22 @@ export default function TripsPage() {
               <p className="text-sm text-gray-600">
                 {trip.startDate} → {trip.endDate}
               </p>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => handleEditTrip(trip)}
+                  className="rounded bg-yellow-400 px-3 py-2 font-semibold text-black hover:bg-yellow-500"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => handleDeleteTrip(trip.id)}
+                  className="rounded bg-red-500 px-3 py-2 font-semibold text-white hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -121,3 +186,4 @@ export default function TripsPage() {
     </main>
   );
 }
+
