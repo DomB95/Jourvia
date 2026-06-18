@@ -32,13 +32,13 @@ export default function TripsPage() {
   };
 
   useEffect(() => {
-    const loadTrips = async () => {
+      
+      const loadTrips = async () => {
       const response = await fetch("http://localhost:8080/api/trips");
       const data = await response.json();
       setTrips(data);
-    };
-
-    loadTrips();
+      };
+      loadTrips();
   }, []);
 
   const clearForm = () => {
