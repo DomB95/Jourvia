@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
+
 
 type Trip = {
   id: number;
@@ -12,6 +15,8 @@ type Trip = {
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
